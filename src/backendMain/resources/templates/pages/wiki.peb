@@ -1,0 +1,28 @@
+{% extends "pages/page" %}
+
+{# @pebvariable name="request" type="team.exr.site.context.WikiTemplate" #}
+
+{% set sidebar = true %}
+{% block title %}EXR Wiki - {{ request.page.name }}{% endblock %}
+{% block og_title %}EXR Wiki - {{ request.page.name }}{% endblock %}
+{% block og_description %}EXR Wiki is a resource for researchers and modders for Pokemon games{% endblock %}
+{% block og_image %}{{ request.baseUrl }}/static/img/og/wiki.png{% endblock %}"
+
+{% block page_content %}
+    {% include "components/wiki/sidebar" %}
+    <div class="content-wrapper">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xl-9">
+                    <div class="content">
+                        {{ request.content | raw }}
+                    </div>
+                </div>
+                <div class="col-xl-3">
+                    {% include "components/wiki/right-sidebar" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+{% endblock %}

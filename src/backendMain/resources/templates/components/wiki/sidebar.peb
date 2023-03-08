@@ -1,0 +1,22 @@
+{# @pebvariable name="request" type="team.exr.site.context.WikiTemplate" #}
+
+<div class="sidebar-overlay"></div>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-menu">
+        {% for group in request.sidebar %}
+            {% if not loop.first %}
+            <br />
+            {% endif %}
+
+            <h5 class="sidebar-title">{{ group.name }}</h5>
+            <div class="sidebar-divider"></div>
+
+            {% for page in group.pages %}
+                <a href="{{ page.path }}" class="sidebar-link {% if page.path == request.page.path %}active{% endif %}">
+                    <span class="name">{{ page.name }}</span>
+                </a>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>

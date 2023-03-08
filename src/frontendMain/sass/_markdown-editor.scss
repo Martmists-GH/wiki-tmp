@@ -1,0 +1,60 @@
+$height: 70vh;
+.md-editor {
+  overflow: hidden;
+
+  .md-editor-out, .md-editor-code {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .md-editor-wrapper {
+    position: relative;
+    height: $height;
+
+    .md-editor-input, .md-editor-highlight {
+      position: absolute;
+      border: 0;
+      width: calc(100% - 32px);
+      height: 100%;
+      top: 0;
+      left: 0;
+    }
+
+    .md-editor-input, .md-editor-highlight, .md-editor-highlight .md-editor-code {
+      font-size: 12pt;
+      font-family: monospace;
+      line-height: 15pt;
+      height: 100%;
+    }
+
+    .md-editor-input {
+      z-index: 1;
+      color: transparent;
+      background: transparent;
+      resize: none;
+      padding: 3rem;
+      margin-top: 17px;
+      outline: none;
+    }
+
+    .md-editor-highlight {
+      z-index: 0;
+    }
+  }
+}
+
+body {
+
+  &:not(.dark-mode) {
+    .md-editor-input {
+      caret-color: black;
+
+    }
+  }
+
+  &.dark-mode {
+    .md-editor-input {
+      caret-color: white;
+    }
+  }
+}

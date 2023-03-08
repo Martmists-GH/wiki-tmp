@@ -1,0 +1,11 @@
+{# @pebvariable name="request" type="team.exr.site.context.WikiTemplate" #}
+
+<div class="content">
+    <div class="on-this-page-nav">
+        <div class="title">On this page</div>
+
+        {% for section in request.page.anchorMap() %}
+        <a href="#{{ section.second }}">{{ section.first }}</a>
+        {% endfor %}
+    </div>
+</div>

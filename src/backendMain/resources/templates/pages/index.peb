@@ -1,0 +1,14 @@
+{% extends "pages/page" %}
+
+{% block title %}Team EXR{% endblock %}
+{% block og_title %}Team EXR{% endblock %}
+{% block og_description %}Team EXR website{% endblock %}
+{% block og_image %}{{ request.baseUrl }}/static/img/og/index.png{% endblock %}
+
+{% block page_content %}
+    <div class="content-wrapper">
+        <div class="container-fluid">
+            {{ generated | raw }}
+        </div>
+    </div>
+{% endblock %}

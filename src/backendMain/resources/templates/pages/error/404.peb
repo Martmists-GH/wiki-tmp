@@ -1,0 +1,18 @@
+{% extends "pages/page" %}
+
+{% block title %}Team EXR - 404{% endblock %}
+{% block og_title %}Team EXR - 404{% endblock %}
+{% block og_description %}Page not found{% endblock %}
+{% block og_image %}{{ request.baseUrl }}/static/img/og/404.png{% endblock %}
+
+{% block page_content %}
+    <div class="content-wrapper">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="content">
+                    <h1>Page not found</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

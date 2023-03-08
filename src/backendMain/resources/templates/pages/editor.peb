@@ -1,0 +1,25 @@
+{% extends "pages/page" %}
+
+{% block title %}Team EXR Wiki Editor{% endblock %}
+{% block og_title %}Team EXR Wiki Editor{% endblock %}
+{% block og_description %}Team EXR website{% endblock %}
+{% block og_image %}{{ request.baseUrl }}/static/img/og/index.png{% endblock %}
+
+{% block page_content %}
+    <div class="content-wrapper">
+        <div class="container-fluid">
+            <div class="row md-editor">
+                <div class="col-7">
+                    <div class="content md-editor-out">
+                    </div>
+                </div>
+                <div class="col-5">
+                    <div class="content md-editor-wrapper">
+                        <textarea class="md-editor-input" spellcheck="false"></textarea>
+                        <pre class="md-editor-highlight" aria-hidden="true"><code class="md-editor-code language-markdown"></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

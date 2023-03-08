@@ -1,0 +1,35 @@
+# Config for exr.martmists.com
+
+website:
+  # The website base URL.
+  url: 'https://exr.martmists.com'
+  # Port the website runs on
+  port: 9001
+
+  # Whether the website is behind a proxy (e.g. Nginx)
+  proxy: false
+
+database:
+  # Driver to use, supports 'h2', 'sqlite' and 'postgres'
+  driver: h2
+
+  # Host and port, unused for sqlite
+  host: localhost
+  port: 5432
+
+  # Name of the database
+  # For sqlite, this is the path to the database file
+  # For postgres, this is the name of the database
+  database: exr_site
+
+  # DB credentials, unused for sqlite
+  username: exr_user
+  password: exr_password
+
+oauth:
+  # Client ID and secret for Discord
+  client_id: 0123456789
+  client_secret: abcdefghijklmnopqrstuvwxyz
+
+  # EXR dev server ID
+  server_id: 0123456789
