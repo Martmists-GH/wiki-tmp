@@ -18,7 +18,7 @@
                         {{ request.content | raw }}
                     </div>
                 </div>
-                <div class="col-xl-3">
+                <div class="col-xl-3 on-this-page-nav-container">
                     {% include "components/wiki/right-sidebar" %}
                 </div>
             </div>
