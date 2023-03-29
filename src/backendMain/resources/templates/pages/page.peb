@@ -28,7 +28,7 @@
 
         <!-- Styles -->
         <link href="/static/css/fontawesome-all.min.css" rel="stylesheet">
-        <link href="/static/css/halfmoon.min.css" rel="stylesheet">
+        <link href="/static/css/halfmoon-variables.min.css" rel="stylesheet">
         <link href="/static/css/halfmoon-docs.min.css" rel="stylesheet">
         <link href="/static/css/halfmoon-highlight.min.css" rel="stylesheet">
         <link href="/static/css/style.css" rel="stylesheet">

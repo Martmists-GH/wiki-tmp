@@ -2,6 +2,7 @@ package team.exr.markdown.exr
 
 import org.intellij.markdown.IElementType
 import org.intellij.markdown.MarkdownElementTypes
+import org.intellij.markdown.flavours.gfm.GFMElementTypes
 import org.intellij.markdown.flavours.space.SFMFlavourDescriptor
 import org.intellij.markdown.html.GeneratingProvider
 import org.intellij.markdown.html.URI
@@ -32,6 +33,7 @@ class ExrFlavourDescriptor(useSafeLinks: Boolean = true) : SFMFlavourDescriptor(
             MarkdownElementTypes.CODE_BLOCK to CodeTagProvider(),
             MarkdownElementTypes.CODE_FENCE to CodeFenceProvider(),
             MarkdownElementTypes.BLOCK_QUOTE to BlockQuoteAlertProvider(),
+            GFMElementTypes.TABLE to TablesTagProvider(),
         ))
 
         return parent

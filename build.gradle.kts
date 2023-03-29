@@ -3,6 +3,7 @@ import com.github.gmazzo.gradle.plugins.generators.BuildConfigKotlinGenerator
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.martmists.commons.*
 import io.miret.etienne.gradle.sass.CompileSass
+import org.gradlewebtools.minify.CssMinifyTask
 import org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
@@ -18,6 +19,7 @@ plugins {
     id("com.github.ben-manes.versions") version "0.46.0"
     id("io.miret.etienne.sass") version "1.4.2"
     id("com.github.gmazzo.buildconfig") version "3.0.3"
+    id("org.gradlewebtools.minify") version "1.3.2"
 }
 
 group = "team.exr"
@@ -162,6 +164,17 @@ tasks {
         }
     }
 
+//    afterEvaluate {
+
+    val minifyCss by creating(CssMinifyTask::class) {
+        srcDir = file("${rootDir.absolutePath}/src/frontendMain/css")
+        dstDir = file("${rootDir.absolutePath}/build/sass")
+
+        options {
+            createSourceMaps = isDevelopment
+        }
+    }
+
     val compileSass by named<CompileSass>("compileSass") {
         outputDir = file("${buildDir}/sass")
         setSourceDir(file("${projectDir}/src/frontendMain/sass"))
@@ -169,6 +182,8 @@ tasks {
         style = compressed
         sourceMap = file
         sourceMapUrls = relative
+
+        dependsOn(minifyCss)
     }
 
     val webpackTask by named("frontendBrowserDistribution") {

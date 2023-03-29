@@ -96,7 +96,7 @@ object MarkdownIndexer {
     private fun getResources(path: String): List<String> {
         val filenames = mutableListOf<String>()
         getResource(path).toURI().getPath {
-            filenames.addAll(it.listDirectoryEntries().map { p -> p.toString().split(path).last().trimStart('/') })
+            filenames.addAll(it.listDirectoryEntries().map { p -> p.toString().replace('\\', '/').split(path).last().trimStart('/') })
         }
         return filenames
     }
