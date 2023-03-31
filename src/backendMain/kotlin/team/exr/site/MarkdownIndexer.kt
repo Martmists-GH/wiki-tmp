@@ -9,9 +9,9 @@ import kotlin.io.path.listDirectoryEntries
 
 object MarkdownIndexer {
     data class Group(val name: String, val index: Int, val pages: List<Page>)
-    data class Page(val name: String, val path: String, val filePath: String, val index: Int, val anchors: List<String>) {
+    data class Page(val name: String, val path: String, val filePath: String, val index: Int, val context: MarkdownParsingContext) {
         fun anchorMap(): List<Pair<String, String>> {
-            return anchors.map { Pair(it, it.toUrlString()) }
+            return context.links.map { Pair(it, it.toUrlString()) }
         }
     }
     private val groups = mutableListOf<Group>()
@@ -34,7 +34,7 @@ object MarkdownIndexer {
                 "/wiki/${dirname.replace(Regex("^\\d+_"), "")}/${file.removeSurrounding(numPrefix, ".md")}",
                 filePath,
                 numPrefix.removeSuffix("_").toIntOrNull() ?: 0,
-                ctx.links,
+                ctx,
             ))
         }
 

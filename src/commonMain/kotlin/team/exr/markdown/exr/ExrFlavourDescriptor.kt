@@ -2,11 +2,14 @@ package team.exr.markdown.exr
 
 import org.intellij.markdown.IElementType
 import org.intellij.markdown.MarkdownElementTypes
+import org.intellij.markdown.ast.ASTNode
+import org.intellij.markdown.ast.getParentOfType
+import org.intellij.markdown.ast.getTextInNode
 import org.intellij.markdown.flavours.gfm.GFMElementTypes
+import org.intellij.markdown.flavours.gfm.GFMTokenTypes
 import org.intellij.markdown.flavours.space.SFMFlavourDescriptor
-import org.intellij.markdown.html.GeneratingProvider
-import org.intellij.markdown.html.URI
-import org.intellij.markdown.html.makeXssSafe
+import org.intellij.markdown.html.*
+import org.intellij.markdown.html.entities.EntityConverter
 import org.intellij.markdown.lexer.MarkdownLexer
 import org.intellij.markdown.parser.LinkMap
 import team.exr.markdown.MarkdownParsingContext
@@ -34,6 +37,32 @@ class ExrFlavourDescriptor(useSafeLinks: Boolean = true) : SFMFlavourDescriptor(
             MarkdownElementTypes.CODE_FENCE to CodeFenceProvider(),
             MarkdownElementTypes.BLOCK_QUOTE to BlockQuoteAlertProvider(),
             GFMElementTypes.TABLE to TablesTagProvider(),
+            MarkdownElementTypes.AUTOLINK to object : GeneratingProvider {
+                override fun processNode(visitor: HtmlGenerator.HtmlGeneratingVisitor, text: String, node: ASTNode) {
+                    val linkText = node.getTextInNode(text)
+                    val linkLabel = EntityConverter.replaceEntities(
+                        linkText.subSequence(1, linkText.length - 1),
+                        processEntities = true,
+                        processEscapes = false
+                    )
+
+                    if (linkLabel.startsWith("footnote:")) {
+                        val num = ctx.footnotes.size + 1
+                        val content = linkLabel.substring(9)
+                        ctx.footnotes[num] = content
+                        visitor.consumeHtml("<sup><a href=\"#footnote-$num\" id=\"footnote-ref-$num\">[$num]</a></sup>")
+                        return
+                    }
+
+                    val linkDestination = LinkMap.normalizeDestination(linkText, false).let {
+                        if (useSafeLinks) makeXssSafeDestination(it) else it
+                    }
+                    visitor.consumeTagOpen(node, "a", "href=\"$linkDestination\"")
+                    visitor.consumeHtml(linkLabel)
+                    visitor.consumeTagClose("a")
+                }
+
+            },
         ))
 
         return parent

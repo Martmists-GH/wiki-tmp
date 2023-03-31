@@ -1,0 +1,11 @@
+{# @pebvariable name="request" type="team.exr.site.context.WikiTemplate" #}
+
+<hr />
+{% for footnote in request.page.context.footnotes.entrySet() %}
+    {% set footnoteId = footnote.key %}
+    {% set footnoteText = footnote.value %}
+    <p class="footnote font-size-12" id="footnote-{{footnoteId}}">
+        <a href="#footnote-ref-{{footnoteId}}">[{{footnoteId}}]</a>
+        {{footnoteText}}
+    </p>
+{% endfor %}

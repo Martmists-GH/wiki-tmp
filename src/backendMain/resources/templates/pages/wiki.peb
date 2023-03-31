@@ -16,6 +16,9 @@
                 <div class="col-xl-9">
                     <div class="content">
                         {{ request.content | raw }}
+                        {% if request.page.context.footnotes.size() != 0 %}
+                            {% include "components/wiki/footnotes" %}
+                        {% endif %}
                     </div>
                 </div>
                 <div class="col-xl-3 on-this-page-nav-container">
