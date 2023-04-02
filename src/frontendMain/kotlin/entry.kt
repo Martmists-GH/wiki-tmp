@@ -1,4 +1,3 @@
-import editor.`editor$transformer`
 import halfmoon.`halfmoon$buttons`
 import ext.addEventListener
 import hljs.`hljs$patchMarkdown`
@@ -10,7 +9,6 @@ suspend fun main() {
     window.addEventListener<CustomEvent>("exr:page_loaded") {
         `hljs$patchMarkdown`()
         `halfmoon$buttons`()
-        `editor$transformer`()
         `sidebar$scrollSmooth`()
 
         hljs.highlightAll()

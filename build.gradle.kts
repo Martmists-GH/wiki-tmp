@@ -113,6 +113,9 @@ kotlin {
                 }
                 implementation("org.postgresql:postgresql:42.5.4")
 
+                // Markdown
+                implementation("com.vladsch.flexmark:flexmark-all:0.64.0")
+
                 // Utilities
                 implementation("com.martmists.commons:commons-jvm:1.0.4")
             }

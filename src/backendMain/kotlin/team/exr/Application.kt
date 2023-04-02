@@ -20,20 +20,23 @@ fun main() {
     MarkdownIndexer.index()
     val config = ConfigLoader.loadDefault()
 
-    embeddedServer(Tomcat, port = config.website.port, host = "0.0.0.0") {
-        install(CallLogging) {
-            level = Level.INFO
+    embeddedServer(Tomcat, port = config.website.port, host = "0.0.0.0", module = Application::exr).start(wait = true)
+}
+
+fun Application.exr() {
+    install(CallLogging) {
+        level = Level.INFO
+    }
+    setupHeaders()
+    setupContent()
+    setupAuthentication()
+
+    routing {
+        static("/static") {
+            resources("/static")
         }
-        setupHeaders()
-        setupContent()
-        setupAuthentication()
 
-        routing {
-            static("/static") {
-                resources("/static")
-            }
-
-            get("/") {
+        get("/") {
 //                // Optional: Use the DSL to generate parts of HTML in code
 //                // Tends to be a little slower than templates if it uses a lot of expressions
 //                val sb = StringBuilder()
@@ -41,21 +44,25 @@ fun main() {
 //                    h1 { +"Team EXR" }
 //                }
 //                call.respondTemplate("pages/index", mapOf("generated" to sb.toString()))
-                call.respondRedirect("/wiki")
-            }
-
-            // TODO: Move to admin
-//            getTemplate("editor")
-
-            // Terms of Service
-//            getTemplate("terms")
-            // Privacy Policy
-//            getTemplate("privacy")
-
-//            auth()
-//            admin()
-//            download()
-            wiki()
+            call.respondRedirect("/wiki")
         }
-    }.start(wait = true)
+
+        if (developmentMode) {
+            get("/reload") {
+                MarkdownIndexer.index()
+                call.respondRedirect("/")
+            }
+        }
+
+
+        // Terms of Service
+//        getTemplate("terms")
+        // Privacy Policy
+//        getTemplate("privacy")
+
+//        auth()
+//        admin()
+//        download()
+        wiki()
+    }
 }

@@ -1,8 +1,16 @@
 package team.exr.site
 
+import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
+import com.vladsch.flexmark.ext.gitlab.GitLabExtension
+import com.vladsch.flexmark.ext.tables.TablesExtension
+import com.vladsch.flexmark.ext.toc.SimTocExtension
+import com.vladsch.flexmark.html.HtmlRenderer
+import com.vladsch.flexmark.parser.Parser
+import com.vladsch.flexmark.util.data.MutableDataSet
 import team.exr.ext.*
 import team.exr.markdown.MarkdownParsingContext
-import team.exr.markdown.MarkdownTransformer
+import team.exr.markdown.OnThisPageCollector
+import team.exr.markdown.WikiExtension
 import java.io.InputStream
 import kotlin.io.path.listDirectoryEntries
 
@@ -17,6 +25,22 @@ object MarkdownIndexer {
     private val groups = mutableListOf<Group>()
     private lateinit var rootGroup: Group
 
+    private val markdownOptions = MutableDataSet().apply {
+        set(HtmlRenderer.INDENT_SIZE, 2)
+        set(HtmlRenderer.PERCENT_ENCODE_URLS, true)
+        set(Parser.EXTENSIONS, listOf(
+            FootnoteExtension.create(),
+            GitLabExtension.create(),
+            TablesExtension.create(),
+            WikiExtension,
+        ))
+
+        set(HtmlRenderer.FENCED_CODE_NO_LANGUAGE_CLASS, "code")
+        set(HtmlRenderer.FENCED_CODE_LANGUAGE_CLASS_PREFIX, "code language-")
+    }
+    private val markdownParser = Parser.builder(markdownOptions).build()
+    private val markdownRenderer = HtmlRenderer.builder(markdownOptions).build()
+
 
     fun index() {
         fun collectFile(dirname: String, file: String, pages: MutableList<Page>) {
@@ -25,7 +49,8 @@ object MarkdownIndexer {
             val markdown = stream.readAllBytes().decodeToString()
 
             val ctx = MarkdownParsingContext()
-            MarkdownTransformer.handle(markdown, ctx)
+            val document = markdownParser.parse(markdown)
+            ctx.links.addAll(OnThisPageCollector.collect(document))
 
             val numPrefix = Regex("(\\d+_).+").matchEntire(file)?.groupValues?.get(1) ?: ""
 
@@ -90,7 +115,8 @@ object MarkdownIndexer {
 
     fun load(stream: InputStream) : String {
         val markdown = stream.readAllBytes().decodeToString()
-        return MarkdownTransformer.handle(markdown)
+        val document = markdownParser.parse(markdown)
+        return markdownRenderer.render(document)
     }
 
     private fun getResources(path: String): List<String> {
