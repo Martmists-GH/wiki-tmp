@@ -1,7 +1,7 @@
-{% extends "pages/page" %}
+{% extends "components/page/public" %}
 
-{% block title %}Team EXR - 404{% endblock %}
-{% block og_title %}Team EXR - 404{% endblock %}
+{% block title %}{{ branding.brand }} - 404{% endblock %}
+{% block og_title %}{{ branding.brand }} - 404{% endblock %}
 {% block og_description %}Page not found{% endblock %}
 {% block og_image %}{{ request.baseUrl }}/static/img/og/404.png{% endblock %}
 

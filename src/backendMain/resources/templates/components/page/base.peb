@@ -1,0 +1,49 @@
+{# @pebvariable name="request" type="team.exr.site.context.WebRequest" #}
+{# @pebvariable name="branding" type="team.exr.site.context.Branding" #}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{% block title %}{{ branding.brand }}{% endblock %}</title>
+        <meta charset="utf-8" />
+        <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+        <meta name="viewport" content="width=device-width" />
+
+        <!-- Nav color -->
+        <meta name="theme-color" content="#000000" />
+        <meta name="msapplication-navbutton-color" content="#000000" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="#000000" />
+
+        <!-- OG tags -->
+        <meta content="{{ request.url }}" property="og:url" />
+        <meta content="{% block og_type %}website{% endblock %}" property="og:type" />
+        <meta content="{% block og_title %}{{ request.domain }}{% endblock %}" property="og:title" />
+        <meta content="{% block og_description %}{{ branding.brand }}'s Website{% endblock %}" property="og:description" />
+        <meta content="{% block og_image %}{{ request.baseUrl }}/static/img/og/banner.png{% endblock %}" property="og:image" />
+
+        <!-- Favicon -->
+        <link href="/static/img/favicon.ico" rel="icon">
+
+        <!-- Styles -->
+        <link href="/static/css/fontawesome-all.min.css" rel="stylesheet">
+        <link href="/static/css/halfmoon-variables.min.css" rel="stylesheet">
+        <link href="/static/css/halfmoon-docs.min.css" rel="stylesheet">
+        <link href="/static/css/halfmoon-highlight.min.css" rel="stylesheet">
+        <link href="/static/css/style.css" rel="stylesheet">
+        {% block styles %}{% endblock %}
+
+        <!-- Scripts -->
+        <script type="text/javascript" src="/static/js/halfmoon.min.js"></script>
+        <script type="text/javascript" src="/static/js/highlight.min.js"></script>
+        <script type="text/javascript" src="/static/js/index.js"></script>
+        {% block scripts %}{% endblock %}
+
+        {% block head %}{% endblock %}
+    </head>
+
+    <body class="dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars" data-set-preferred-mode-onload="true">
+        {% block body %}{% endblock %}
+        <script type="text/javascript">window.dispatchEvent(new CustomEvent('wiki:page_loaded'));</script>
+    </body>
+</html>

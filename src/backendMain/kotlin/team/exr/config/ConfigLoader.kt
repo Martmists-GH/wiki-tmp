@@ -21,7 +21,9 @@ object ConfigLoader {
         )
     }
 
-    fun loadDefault() = load<SiteConfig>("site.yaml", "config/site.yaml")
+    val default by lazy {
+        load<SiteConfig>("site.yaml", "config/site.yaml")
+    }
 
     inline fun <reified T> load(path: String, resource: InputStream) = load<T>(path, resource.readAllBytes().decodeToString())
     inline fun <reified T> load(path: String, default: String) = load<T>(File(path), default)

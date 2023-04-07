@@ -15,9 +15,10 @@ import java.io.InputStream
 import kotlin.io.path.listDirectoryEntries
 
 
+// TODO: Deprecate in favor of database?
 object MarkdownIndexer {
     data class Group(val name: String, val index: Int, val pages: List<Page>)
-    data class Page(val name: String, val path: String, val filePath: String, val index: Int, val context: MarkdownParsingContext) {
+    data class Page(val name: String, val path: String, val filePath: String, val index: Int, val context: MarkdownParsingContext, val description: String = "") {
         fun anchorMap(): List<Pair<String, String>> {
             return context.links.map { Pair(it, it.toUrlString()) }
         }

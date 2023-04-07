@@ -1,7 +1,7 @@
-{% extends "pages/page" %}
+{% extends "components/page/public" %}
 
-{% block title %}Team EXR - 500{% endblock %}
-{% block og_title %}Team EXR - 500{% endblock %}
+{% block title %}{{ branding.brand }} - 500{% endblock %}
+{% block og_title %}{{ branding.brand }} - 500{% endblock %}
 {% block og_description %}Internal Server Error{% endblock %}
 {% block og_image %}{{ request.baseUrl }}/static/img/og/500.png{% endblock %}
 

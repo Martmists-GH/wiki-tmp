@@ -1,0 +1,95 @@
+{% extends "components/page/admin" %}
+{% import "macros/icon" %}
+
+{# @pebvariable name="db" type="team.exr.site.context.WikiDatabaseData" #}
+
+{% block admin_content %}
+    <form action="/admin/wiki" method="POST">
+        <!-- Horizontal row: Select page to edit -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <select name="wiki-id" id="wjs-wiki-id" class="form-control">
+                        <option value="-1" selected disabled>Select a page</option>
+                        {% for page in db.pages %}
+                            <option value="{{ page.id }}:{{ page.group }}:{{ page.public }}">{{ page.name }}</option>
+                        {% endfor %}
+                        <option value="-2:-1:false">Create new</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Column 3/12: Card with page attributes; group, title, visibility | Card with images -->
+            <div class="col-xl-3">
+                <div class="card">
+                    <select name="group-id" id="wjs-group-id" class="form-control mb-10" disabled>
+                        <option value="-1" selected disabled>Select a group</option>
+                        {% for group in db.groups %}
+                            <option value="{{ group.id }}">{{ group.name }}</option>
+                        {% endfor %}
+                        <option value="-2">Create new</option>
+                    </select>
+                    <div class="form-group">
+                        <input name="wiki-group" id="wjs-group-name" type="text" class="form-control" placeholder="Group name" required disabled>
+                    </div>
+                    <div class="form-group">
+                        <input name="wiki-title" id="wjs-wiki-title" type="text" class="form-control" placeholder="Page title" required disabled>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-checkbox">
+                            <input name="wiki-public" id="wjs-wiki-public" type="checkbox" class="form-control" disabled>
+                            <label for="wjs-wiki-public">Public</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <input name="wiki-delete" id="wjs-wiki-delete-check" type="checkbox" class="d-none">
+                        <input type="submit" id="wjs-wiki-save" class="btn btn-primary mr-5" value="Save" disabled>
+                        <input type="submit" id="wjs-wiki-delete" class="btn btn-danger mr-5 d-none" value="Delete" disabled>
+                        <button class="btn" id="wjs-wiki-preview" disabled>Preview {{ icon("fa-solid fa-arrow-up-right-from-square") }}</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <form action="/admin/image" method="POST">
+                        <select name="image-id" id="wjs-image-id" class="form-control mb-10">
+                            <option value="-1" selected disabled>Select an image</option>
+                            {% for image in db.images %}
+                                <option value="{{ image.id }}">{{ image.name }}</option>
+                            {% endfor %}
+                            <option value="-2">Upload new</option>
+                        </select>
+                        <img alt="Selected Image" src="[[NOT SET]]" class="img-fluid rounded mb-10 d-none" id="wjs-image-preview"/>
+
+                        <div class="custom-file mb-10">
+                            <input type="file" name="image-upload" id="wjs-image-input" accept=".jpg,.png,.gif" required>
+                            <label for="wjs-image-input">Choose image</label>
+                        </div>
+                        <div class="form-group">
+                            <input name="image-name" type="text" class="form-control" id="wjs-image-name" placeholder="Image name" required disabled>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="wjs-image-class" placeholder="Image path" readonly disabled>
+                        </div>
+                        <div class="form-group">
+                            <input name="image-delete" type="checkbox" class="d-none">
+                            <input type="submit" class="btn btn-primary mr-5" id="wjs-image-save" value="Save Image" disabled>
+                            <input type="submit" class="btn btn-danger" id="wjs-image-delete" value="Delete Image" disabled>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Column 9/12: Card with markdown editor -->
+            <div class="col-xl-9 d-flex">
+                <div class="card flex-fill d-flex">
+                    <div class="position-relative flex-fill">
+                        <pre class="z-10 position-absolute top-0 left-0 h-full w-full m-0"><textarea name="wiki-content" id="wjs-wiki-content" class="code h-full w-full" spellcheck="false" disabled># Markdown here!</textarea></pre>
+                        <pre class="z-0 position-absolute top-0 left-0 h-full w-full m-0" id="wjs-wiki-highlight" aria-hidden="true"><code class="language-markdown code h-full w-full" id="wjs-wiki-code"># Markdown here!</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}

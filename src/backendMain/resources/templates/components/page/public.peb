@@ -1,0 +1,8 @@
+{% extends "components/page/base" %}
+
+{% block body %}
+    <div class="page-wrapper with-navbar with-transitions {% if sidebar %}with-sidebar" data-sidebar-type="overlayed-sm-and-down{% endif %}">
+        {% include "components/navbar" with {"sidebar": sidebar} %}
+        {% block page_content %}{% endblock %}
+    </div>
+{% endblock %}

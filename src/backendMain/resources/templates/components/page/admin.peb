@@ -1,0 +1,20 @@
+{% extends "components/page/base" %}
+
+{% block styles %}
+    <link href="/static/css/style-admin.css" rel="stylesheet">
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript" src="/static/js/index-admin.js"></script>
+{% endblock %}
+
+{% block body %}
+    <div class="page-wrapper with-navbar with-transitions">
+        {% include "components/admin/navbar" %}
+        <div class="content-wrapper">
+            <div class="container-fluid">
+                {% block admin_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

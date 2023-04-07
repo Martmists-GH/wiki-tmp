@@ -1,0 +1,15 @@
+@font-face {
+  font-family: "Noto Sans Regular";
+  font-display: block;
+  font-weight: 900;
+  src: url(../webfonts/noto-sans-regular.woff2) format("woff2"),
+       url(../webfonts/noto-sans-regular.ttf) format("truetype")
+}
+
+@font-face {
+  font-family: "Jetbrains Mono";
+  font-display: block;
+  font-weight: 900;
+  src: url(../webfonts/jetbrains-mono-regular.woff2) format("woff2"),
+       url(../webfonts/jetbrains-mono-regular.ttf) format("truetype")
+}

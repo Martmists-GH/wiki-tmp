@@ -1,12 +1,13 @@
-{% extends "pages/page" %}
+{% extends "components/page/public" %}
 
-{# @pebvariable name="request" type="team.exr.site.context.WikiTemplate" #}
+{# @pebvariable name="wiki" type="team.exr.site.context.WikiTemplate" #}
+{# @pebvariable name="request" type="team.exr.site.context.WebRequest" #}
 
 {% set sidebar = true %}
-{% block title %}EXR Wiki - {{ request.page.name }}{% endblock %}
-{% block og_title %}EXR Wiki - {{ request.page.name }}{% endblock %}
-{% block og_description %}EXR Wiki is a resource for researchers and modders for Pokemon games{% endblock %}
-{% block og_image %}{{ request.baseUrl }}/static/img/og/wiki.png{% endblock %}"
+{% block title %}{{ branding.brand }} Wiki - {{ wiki.page.name }}{% endblock %}
+{% block og_title %}{{ branding.brand }} Wiki - {{ wiki.page.name }}{% endblock %}
+{% block og_description %}{{ wiki.page.description }}{% endblock %}
+{% block og_image %}{{ request.baseUrl }}/static/img/og/wiki.png{% endblock %}
 
 {% block page_content %}
     {% include "components/wiki/sidebar" %}
@@ -15,7 +16,7 @@
             <div class="row">
                 <div class="col-xl-9">
                     <div class="content">
-                        {{ request.content | raw }}
+                        {{ wiki.content | raw }}
                     </div>
                 </div>
                 <div class="col-xl-3 on-this-page-nav-container">
@@ -24,5 +25,4 @@
             </div>
         </div>
     </div>
-</body>
 {% endblock %}

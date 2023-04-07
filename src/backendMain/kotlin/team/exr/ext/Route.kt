@@ -6,6 +6,6 @@ import com.martmists.commons.ktor.ext.respondTemplate
 
 fun Route.getTemplate(path: String) {
     get("/$path") {
-        call.respondTemplate("pages/$path", emptyMap())
+        call.respondTemplateWithContext("pages/$path")
     }
 }

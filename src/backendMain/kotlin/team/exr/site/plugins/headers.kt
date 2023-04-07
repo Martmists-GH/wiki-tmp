@@ -1,10 +1,11 @@
 package team.exr.site.plugins
 
+import io.ktor.server.application.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.defaultheaders.*
 import io.ktor.server.plugins.forwardedheaders.*
-import io.ktor.server.application.*
 import team.exr.buildconfig.BuildConfig
+import team.exr.config.ConfigLoader
 
 fun Application.setupHeaders() {
     if (!BuildConfig.IS_DEVELOPMENT) {
@@ -20,7 +21,9 @@ fun Application.setupHeaders() {
     }
     install(DefaultHeaders) {
         header("X-Engine", "Ktor")
-        header("X-Powered-By", "Team EXR")
     }
-    install(XForwardedHeaders)
+    if (ConfigLoader.default.website.proxy) {
+        install(ForwardedHeaders)
+        install(XForwardedHeaders)
+    }
 }

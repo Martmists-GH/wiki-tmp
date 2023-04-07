@@ -1,8 +1,6 @@
-# Config for exr.martmists.com
-
 website:
   # The website base URL.
-  url: 'https://exr.martmists.com'
+  url: 'http://localhost'
   # Port the website runs on
   port: 9001
 
@@ -20,16 +18,8 @@ database:
   # Name of the database
   # For sqlite, this is the path to the database file
   # For postgres, this is the name of the database
-  database: exr_site
+  database: wiki_site
 
   # DB credentials, unused for sqlite
-  username: exr_user
-  password: exr_password
-
-oauth:
-  # Client ID and secret for Discord
-  client_id: 0123456789
-  client_secret: abcdefghijklmnopqrstuvwxyz
-
-  # EXR dev server ID
-  server_id: 0123456789
+  username: wiki_user
+  password: wiki_password

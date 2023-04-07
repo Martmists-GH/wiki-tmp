@@ -1,10 +1,8 @@
-{# @pebvariable name="request" type="team.exr.site.context.WikiTemplate" #}
-
-<div class="sidebar-overlay"></div>
+{# @pebvariable name="wiki" type="team.exr.site.context.WikiTemplate" #}
 
 <div class="sidebar" id="sidebar">
     <div class="sidebar-menu">
-        {% for group in request.sidebar %}
+        {% for group in wiki.sidebar %}
             {% if not loop.first %}
             <br />
             {% endif %}
@@ -13,7 +11,7 @@
             <div class="sidebar-divider"></div>
 
             {% for page in group.pages %}
-                <a href="{{ page.path }}" class="sidebar-link {% if page.path == request.page.path %}active{% endif %}">
+                <a href="{{ page.path }}" class="sidebar-link {% if page.path == wiki.page.path %}active{% endif %}">
                     <span class="name">{{ page.name }}</span>
                 </a>
             {% endfor %}

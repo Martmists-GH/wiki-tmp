@@ -6,29 +6,28 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import team.exr.ext.getTemplate
-import team.exr.site.auth.DiscordAuthPrincipal
+import team.exr.ext.respondTemplateWithContext
+import team.exr.site.auth.LoginAuthCookie
+import team.exr.site.auth.LoginRedirectCookie
 
 fun Routing.auth() {
-    authenticate("discord-oauth") {
-        get("/auth/login") {
-            // automatic redirect
-        }
+    get("/auth/login") {
+        call.respondTemplateWithContext("pages/auth/login")
+    }
 
-        get("/auth/callback") {
-            val principal = call.principal<OAuthAccessTokenResponse.OAuth2>()
-
-            if (principal == null) {
-                call.respondRedirect("/auth/login_failed")
-            } else {
-                val session = DiscordAuthPrincipal(principal.accessToken, principal.refreshToken!!)
-                if (session.isValid()) {
-                    call.sessions.set(session)
-                    call.respondRedirect("/auth/login_success")
-                } else {
-                    call.respondRedirect("/auth/login_failed")
-                }
-            }
+    authenticate("login-form") {
+        post("/auth/login") {
+            val principal = call.principal<LoginAuthCookie>()!!
+            call.sessions.set(principal)
+            val redirect = call.sessions.get<LoginRedirectCookie>()
+            call.sessions.clear<LoginRedirectCookie>()
+            call.respondRedirect(redirect?.path ?: "/admin")
         }
+    }
+
+    get("/auth/logout") {
+        call.sessions.clear<LoginAuthCookie>()
+        call.respondRedirect("/")
     }
 
     getTemplate("auth/login_success")

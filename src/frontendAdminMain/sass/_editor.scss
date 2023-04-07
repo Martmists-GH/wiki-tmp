@@ -1,0 +1,20 @@
+#wjs-wiki-content {
+  padding: 3rem;
+  white-space: nowrap;
+  color: rgba(0, 0, 0, 0);
+  caret-color: var(--lm-input-text-color);
+}
+
+#wjs-wiki-highlight {
+  overflow: scroll;
+
+  code {
+    overflow: hidden;
+  }
+}
+
+.dark-mode {
+  #wjs-wiki-content {
+    caret-color: var(--dm-input-text-color);
+  }
+}

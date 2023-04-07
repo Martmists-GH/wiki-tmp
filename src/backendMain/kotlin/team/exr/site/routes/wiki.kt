@@ -1,11 +1,11 @@
 package team.exr.site.routes
 
-import com.martmists.commons.ktor.ext.respondTemplate
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import team.exr.ext.getResourceAsStream
+import team.exr.ext.respondTemplateWithContext
 import team.exr.site.context.WikiTemplate
 import team.exr.site.MarkdownIndexer
 import team.exr.site.plugins.NotFoundStatusException
@@ -32,15 +32,13 @@ fun Routing.wiki() {
         val stream = getResourceAsStream(page.filePath)
 
         MarkdownIndexer.load(stream).let {
-            call.respondTemplate("pages/wiki",
-                mapOf("request" to WikiTemplate(
-                    "https://${call.request.host()}${call.request.port().let { if (it == 80) "" else ":$it" }}",
-                    "https://${call.request.host()}${call.request.port().let { if (it == 80) "" else ":$it" }}${call.request.uri}",
+            call.respondTemplateWithContext("pages/wiki", mapOf(
+                "wiki" to WikiTemplate(
                     MarkdownIndexer.getSidebarEntries(),
                     page,
                     it
-                ))
-            )
+                )
+            ))
         }
     }
 }

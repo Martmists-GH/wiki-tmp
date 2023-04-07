@@ -4,13 +4,13 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.martmists.commons.*
 import io.miret.etienne.gradle.sass.CompileSass
 import org.gradlewebtools.minify.CssMinifyTask
-import org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
+import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrLink
+import org.jetbrains.kotlin.gradle.targets.js.ir.SyncExecutableTask
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("multiplatform") version "1.8.10"
+    kotlin("multiplatform") version "1.8.20"
     kotlin("plugin.serialization") version "1.8.10"
 
     application
@@ -32,15 +32,33 @@ repositories {
     mavenCentral()
     martmists()
 }
+dependencies {
+    implementation("io.ktor:ktor-server-forwarded-header-jvm:2.2.4")
+    implementation("io.ktor:ktor-server-core-jvm:2.2.4")
+    implementation("io.ktor:ktor-server-metrics-micrometer-jvm:2.2.4")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.6.3")
+    implementation(kotlin("stdlib-jdk8"))
+}
 
 kotlin {
-    js("frontend", IR) {
+    val idAttr = Attribute.of(String::class.java)
+    js("frontendPublic", IR) {
         browser {
             commonWebpackConfig {
                 outputFileName = "index.js"
             }
         }
         binaries.executable()
+        attributes.attribute(idAttr, "public")
+    }
+    js("frontendAdmin", IR) {
+        browser {
+            commonWebpackConfig {
+                outputFileName = "index-admin.js"
+            }
+        }
+        binaries.executable()
+        attributes.attribute(idAttr, "admin")
     }
     jvm("backend") {
         withJava()
@@ -61,7 +79,18 @@ kotlin {
             }
         }
 
-        val frontendMain by getting {
+        val frontendCommonMain by creating {
+            dependencies {
+                implementation("org.jetbrains.kotlin-wrappers:kotlin-extensions:1.0.1-pre.529")
+            }
+        }
+        val frontendPublicMain by getting {
+            dependsOn(frontendCommonMain)
+        }
+
+        val frontendAdminMain by getting {
+            dependsOn(frontendCommonMain)
+
             dependencies {
                 implementation("io.ktor:ktor-client-js:2.2.4")
                 implementation("io.ktor:ktor-client-content-negotiation-js:2.2.4")
@@ -84,8 +113,8 @@ kotlin {
                     // Plugins: Content
                     "content-negotiation", "status-pages", "html-builder",
 
-                    // Plugins: Misc
-                    "call-logging",
+                    // Plugins: Monitoring
+                    "call-logging"
                 )) {
                     implementation("io.ktor:ktor-server-$module-jvm:2.2.4")
                 }
@@ -113,6 +142,9 @@ kotlin {
                 }
                 implementation("org.postgresql:postgresql:42.5.4")
 
+                // Password hashing
+                implementation("de.mkammerer:argon2-jvm:2.11")
+
                 // Markdown
                 implementation("com.vladsch.flexmark:flexmark-all:0.64.0")
 
@@ -121,6 +153,7 @@ kotlin {
             }
         }
     }
+    jvmToolchain(11)
 }
 
 application {
@@ -139,6 +172,14 @@ tasks {
         dependsOn("generateBuildConfig", "downloadSass")
     }
 
+    withType<KotlinJsIrLink> {
+        destinationDirectory.set(destinationDirectory.get().dir(name))
+    }
+
+    withType<SyncExecutableTask> {
+        destinationDir = destinationDir.resolve(displayName)
+    }
+
     // Frontend
     withType<Kotlin2JsCompile> {
         kotlinOptions {
@@ -154,6 +195,7 @@ tasks {
     withType<KotlinCompile> {
         kotlinOptions {
             freeCompilerArgs += listOfNotNull(
+                "-Xcontext-receivers",
                 if (isDevelopment) null else "-Xno-call-assertions",
                 if (isDevelopment) null else "-Xno-receiver-assertions",
                 if (isDevelopment) null else "-Xno-param-assertions",
@@ -167,48 +209,66 @@ tasks {
         }
     }
 
-//    afterEvaluate {
-
-    val minifyCss by creating(CssMinifyTask::class) {
-        srcDir = file("${rootDir.absolutePath}/src/frontendMain/css")
-        dstDir = file("${rootDir.absolutePath}/build/sass")
+    val minifyPublicCss by creating(CssMinifyTask::class) {
+        srcDir = projectDir.resolve("src/frontendPublicMain/css")
+        dstDir = buildDir.resolve("sass/public")
 
         options {
             createSourceMaps = isDevelopment
+            allowUnrecognizedProperties = true
         }
     }
 
-    val compileSass by named<CompileSass>("compileSass") {
-        outputDir = file("${buildDir}/sass")
-        setSourceDir(file("${projectDir}/src/frontendMain/sass"))
+    val compilePublicSass by creating(CompileSass::class) {
+        outputDir = buildDir.resolve("sass/public")
+        setSourceDir(projectDir.resolve("src/frontendPublicMain/sass"))
         loadPath(file("sass-lib"))
         style = compressed
         sourceMap = file
         sourceMapUrls = relative
 
-        dependsOn(minifyCss)
+        dependsOn(minifyPublicCss)
     }
 
-    val webpackTask by named("frontendBrowserDistribution") {
-        outputs.upToDateWhen { false }
+    val minifyAdminCss by creating(CssMinifyTask::class) {
+        srcDir = projectDir.resolve("src/frontendAdminMain/css")
+        dstDir = buildDir.resolve("sass/admin")
+
+        options {
+            createSourceMaps = isDevelopment
+            allowUnrecognizedProperties = true
+        }
+    }
+
+    val compileAdminSass by creating(CompileSass::class) {
+        outputDir = buildDir.resolve("sass/admin")
+        setSourceDir(projectDir.resolve("src/frontendAdminMain/sass"))
+        loadPath(file("sass-lib"))
+        style = compressed
+        sourceMap = file
+        sourceMapUrls = relative
+
+        dependsOn(minifyAdminCss)
     }
 
     named<Copy>("backendProcessResources") {
-        dependsOn(webpackTask)
-
-        outputs.upToDateWhen { false }  // Work around issue with JS outputs sometimes not being included in the build
-
         into("/static/js/") {
-            from(webpackTask) {
+            from(named("frontendPublicBrowserDistribution")) {
                 include("index.js")
                 if (isDevelopment) {
                     include("index.js.map")
                 }
             }
+            from(named("frontendAdminBrowserDistribution")) {
+                include("index-admin.js")
+                if (isDevelopment) {
+                    include("index-admin.js.map")
+                }
+            }
         }
 
         into("static/css/") {
-            from(compileSass)
+            from(compilePublicSass, compileAdminSass)
         }
     }
 
@@ -230,6 +290,6 @@ tasks {
 
     named<JavaExec>("run") {
         dependsOn(shadowJar)
-        workingDir(file("${rootDir.absolutePath}/run/").also { if (!it.exists()) it.mkdirs() })
+        workingDir(projectDir.resolve("run").also { if (!it.exists()) it.mkdirs() })
     }
 }

@@ -1,4 +1,4 @@
-{% extends "pages/page" %}
+{% extends "components/page/public" %}
 
 {% block title %}Team EXR{% endblock %}
 {% block og_title %}Team EXR{% endblock %}
