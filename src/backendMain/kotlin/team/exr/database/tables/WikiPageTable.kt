@@ -8,6 +8,7 @@ object WikiPageTable : IntIdTable() {
     val content = text("content")
     val description = varchar("description", 256)
     val published = bool("published").default(false)
+    val priority = integer("priority").default(0)
 
     init {
         uniqueIndex(category, name)

@@ -11,8 +11,6 @@ import team.exr.site.MarkdownIndexer
 import team.exr.site.plugins.NotFoundStatusException
 
 fun Routing.wiki() {
-    // TODO: Refactor after database has been added
-
     get("/wiki") {
         call.respondRedirect("/wiki/index")
     }
@@ -24,21 +22,18 @@ fun Routing.wiki() {
             path += "index"
         }
 
-        val page = try {
-            MarkdownIndexer.getPageFor(path)
-        } catch (e: IllegalArgumentException) {
+        val page = MarkdownIndexer.pageFor(path) ?: throw NotFoundStatusException()
+
+        if (!page.public) {
             throw NotFoundStatusException()
         }
-        val stream = getResourceAsStream(page.filePath)
 
-        MarkdownIndexer.load(stream).let {
-            call.respondTemplateWithContext("pages/wiki", mapOf(
-                "wiki" to WikiTemplate(
-                    MarkdownIndexer.getSidebarEntries(),
-                    page,
-                    it
-                )
-            ))
-        }
+         call.respondTemplateWithContext("pages/wiki", mapOf(
+            "wiki" to WikiTemplate(
+                MarkdownIndexer.getSidebarEntries(true),
+                page,
+                MarkdownIndexer.render(page)
+            )
+        ))
     }
 }

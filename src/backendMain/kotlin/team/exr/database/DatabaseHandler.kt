@@ -42,8 +42,8 @@ private fun loadDatabase(): Database {
 }
 
 object DatabaseHandler : ThreadedDatabase(createDb = ::loadDatabase) {
-    fun load() {
-        transaction {
+   suspend fun load() {
+        transactionAsync {
             SchemaUtils.createMissingTablesAndColumns(
                 MetadataTable,
                 UserTable,

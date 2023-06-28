@@ -7,7 +7,7 @@ class WikiDatabaseData(
 ) {
     class Group(val id: Int, val name: String)
 
-    class Page(val id: Int, val name: String, val group: Int, val public: Boolean)
+    class Page(val id: Int, val name: String, val group: Int)
 
     class Image(val id: Int, val name: String)
 }

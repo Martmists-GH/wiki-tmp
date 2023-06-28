@@ -1,11 +1,11 @@
-#wjs-wiki-content {
+#wjs-editor-md-input {
   padding: 3rem;
   white-space: nowrap;
   color: rgba(0, 0, 0, 0);
   caret-color: var(--lm-input-text-color);
 }
 
-#wjs-wiki-highlight {
+#wjs-editor-md-code {
   overflow: scroll;
 
   code {
@@ -14,7 +14,7 @@
 }
 
 .dark-mode {
-  #wjs-wiki-content {
+  #wjs-editor-md-input {
     caret-color: var(--dm-input-text-color);
   }
 }

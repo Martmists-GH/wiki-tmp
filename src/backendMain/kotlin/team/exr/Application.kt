@@ -6,6 +6,9 @@ import io.ktor.server.http.content.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.tomcat.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import team.exr.config.ConfigLoader
 import team.exr.database.DatabaseHandler
 import team.exr.site.MarkdownIndexer
@@ -19,8 +22,11 @@ import team.exr.site.routes.wiki
 
 fun main() {
     // Index all markdown pages
-    MarkdownIndexer.index()
-    DatabaseHandler.load()
+
+    runBlocking {
+        DatabaseHandler.load()
+        MarkdownIndexer.rebuildIndex()
+    }
 
     embeddedServer(Tomcat, port = ConfigLoader.default.website.port, host = "0.0.0.0", module = Application::exr).start(wait = true)
 }
@@ -55,13 +61,6 @@ fun Application.exr() {
 
         get("/") {
             call.respondRedirect("/wiki")
-        }
-
-        if (developmentMode) {
-            get("/reload") {
-                MarkdownIndexer.index()
-                call.respondRedirect("/")
-            }
         }
 
         auth()

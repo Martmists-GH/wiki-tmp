@@ -3,28 +3,29 @@ package team.exr.site
 import com.vladsch.flexmark.ext.footnotes.FootnoteExtension
 import com.vladsch.flexmark.ext.gitlab.GitLabExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
-import com.vladsch.flexmark.ext.toc.SimTocExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
+import team.exr.database.DatabaseHandler
+import team.exr.database.tables.WikiCategoryTable
+import team.exr.database.tables.WikiPageTable
 import team.exr.ext.*
 import team.exr.markdown.MarkdownParsingContext
 import team.exr.markdown.OnThisPageCollector
 import team.exr.markdown.WikiExtension
-import java.io.InputStream
-import kotlin.io.path.listDirectoryEntries
 
 
-// TODO: Deprecate in favor of database?
 object MarkdownIndexer {
     data class Group(val name: String, val index: Int, val pages: List<Page>)
-    data class Page(val name: String, val path: String, val filePath: String, val index: Int, val context: MarkdownParsingContext, val description: String = "") {
+    data class Page(val id: Int, val name: String, val description: String, val public: Boolean, val index: Int, val context: MarkdownParsingContext) {
         fun anchorMap(): List<Pair<String, String>> {
             return context.links.map { Pair(it, it.toUrlString()) }
         }
     }
+
     private val groups = mutableListOf<Group>()
-    private lateinit var rootGroup: Group
 
     private val markdownOptions = MutableDataSet().apply {
         set(HtmlRenderer.INDENT_SIZE, 2)
@@ -42,89 +43,62 @@ object MarkdownIndexer {
     private val markdownParser = Parser.builder(markdownOptions).build()
     private val markdownRenderer = HtmlRenderer.builder(markdownOptions).build()
 
-
-    fun index() {
-        fun collectFile(dirname: String, file: String, pages: MutableList<Page>) {
-            val filePath = if (dirname.isEmpty()) "/wiki/$file" else "/wiki/$dirname/$file"
-            val stream = getResourceAsStream(filePath)
-            val markdown = stream.readAllBytes().decodeToString()
-
-            val ctx = MarkdownParsingContext()
-            val document = markdownParser.parse(markdown)
-            ctx.links.addAll(OnThisPageCollector.collect(document))
-
-            val numPrefix = Regex("(\\d+_).+").matchEntire(file)?.groupValues?.get(1) ?: ""
-
-            pages.add(Page(
-                file.removeSurrounding(numPrefix, ".md").toHumanString(),
-                "/wiki/${dirname.replace(Regex("^\\d+_"), "")}/${file.removeSurrounding(numPrefix, ".md")}",
-                filePath,
-                numPrefix.removeSuffix("_").toIntOrNull() ?: 0,
-                ctx,
-            ))
-        }
-
-        fun collectFilesInDir(dirname: String) {
-            val pages = mutableListOf<Page>()
-            for (file in getResources("/wiki/$dirname")) {
-                if (file.endsWith(".md")) {
-                    collectFile(dirname, file, pages)
-                }
-            }
-
-            val numPrefix = Regex("(\\d+_).+").matchEntire(dirname)?.groupValues?.get(1) ?: ""
-            val idx = (numPrefix.removeSuffix("_").toIntOrNull() ?: 0)
-
-            groups.add(Group(dirname.removePrefix(numPrefix).toHumanString(), idx, pages.sortedBy { it.index }))
-        }
-
-        groups.clear()
-        for (dirname in getResources("/wiki/")) {
-            if (!dirname.endsWith(".md")) {
-                collectFilesInDir(dirname)
-            }
-        }
-
-        val p = mutableListOf<Page>()
-        for (file in getResources("/wiki/")) {
-            if (file.endsWith(".md")) {
-                collectFile("", file, p)
-            }
-        }
-        rootGroup = Group("Root", -1, p.sortedBy { it.index })
+    fun getSidebarEntries(public: Boolean): List<Group> {
+        return groups.filter { it.pages.any { it.public || !public } && it.name != "index" }
     }
 
-    fun getSidebarEntries(): List<Group> {
-        return groups.sortedBy { it.index }
+    suspend fun pageFor(id: Int): Page? {
+        val (groupName, pageName) = DatabaseHandler.transactionAsync {
+            val row = WikiPageTable.select { WikiPageTable.id eq id }.firstOrNull() ?: return@transactionAsync null
+            val groupRow = WikiCategoryTable.select { WikiCategoryTable.id eq row[WikiPageTable.category] }.first()
+            row[WikiPageTable.name] to groupRow[WikiCategoryTable.name]
+        } ?: return null
+        return pageFor("$groupName/$pageName")
     }
 
-    fun getPageFor(path: String) : Page {
-        if (path == "/wiki/index") {
-            return rootGroup.pages.first()
+    fun pageFor(path: String): Page? {
+        if (path == "index") {
+            return groups.firstOrNull { it.name == "index" }?.pages?.firstOrNull()
         }
 
-        for (group in groups) {
-            for (page in group.pages) {
-                if (page.path == path) {
-                    return page
-                }
-            }
-        }
-
-        throw IllegalArgumentException("No page found for $path")
+        val (groupName, pageName) = path.split('/')
+        val group = groups.firstOrNull { it.name.toUrlString() == groupName } ?: return null
+        return group.pages.firstOrNull { it.name.toUrlString() == pageName }
     }
 
-    fun load(stream: InputStream) : String {
-        val markdown = stream.readAllBytes().decodeToString()
-        val document = markdownParser.parse(markdown)
+    suspend fun render(page: Page): String {
+        val content = DatabaseHandler.transactionAsync {
+            val row = WikiPageTable.select { WikiPageTable.id eq page.id }.first()
+            row[WikiPageTable.content]
+        }
+
+        val document = markdownParser.parse(content)
         return markdownRenderer.render(document)
     }
 
-    private fun getResources(path: String): List<String> {
-        val filenames = mutableListOf<String>()
-        getResource(path).toURI().getPath {
-            filenames.addAll(it.listDirectoryEntries().map { p -> p.toString().replace('\\', '/').split(path).last().trimStart('/') })
+    suspend fun rebuildIndex() {
+        DatabaseHandler.transactionAsync {
+            val allGroups = WikiCategoryTable.selectAll().orderBy(WikiCategoryTable.name).map {
+                val pages = WikiPageTable.selectAll().orderBy(WikiPageTable.name).map {
+                    val ctx = MarkdownParsingContext()
+                    val document = markdownParser.parse(it[WikiPageTable.content])
+                    ctx.links.addAll(OnThisPageCollector.collect(document))
+
+                    Page(
+                        it[WikiPageTable.id].value,
+                        it[WikiPageTable.name],
+                        it[WikiPageTable.description],
+                        it[WikiPageTable.published],
+                        it[WikiPageTable.priority],
+                        ctx,
+                    )
+                }
+
+                Group(it[WikiCategoryTable.name], it[WikiCategoryTable.priority], pages.sortedBy { -it.index })
+            }
+
+            groups.clear()
+            groups.addAll(allGroups.sortedBy { -it.index })
         }
-        return filenames
     }
 }
