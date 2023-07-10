@@ -10,6 +10,7 @@ import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.Nullability
 import com.martmists.graphql.annotations.GraphQLModel
 import com.martmists.graphql.annotations.HideGraphQLField
 import java.io.OutputStreamWriter
@@ -29,38 +30,49 @@ class GraphQLProcessor(private val gen: CodeGenerator) : SymbolProcessor {
     // - Iterable (One-to-many, Many-to-many)
     interface Handler {
         val typeName: String
+        val nullable: Boolean
         val get: String
         val set: String
     }
 
-    class DefaultHandler(private val type: KSClassDeclaration, private val fieldName: String) : Handler {
+    class DefaultHandler(private val type: KSClassDeclaration, override val nullable: Boolean, private val fieldName: String) : Handler {
+        private val nc = if (nullable) "?" else ""
+
         override val typeName: String
-            get() = type.qualifiedName!!.asString()
+            get() = type.qualifiedName!!.asString() + nc
 
         override val get: String
-            get() = "instance.$fieldName"
+            get() = "instance$nc.$fieldName"
 
         override val set: String
             get() = "instance.$fieldName = value"
     }
 
-    class ModelHandler(private val type: KSClassDeclaration, private val fieldName: String) : Handler {
+    class ModelHandler(private val type: KSClassDeclaration, override val nullable: Boolean, private val fieldName: String) : Handler {
+        private val nc = if (nullable) "?" else ""
+
         override val typeName: String
-            get() = "${type.qualifiedName!!.asString()}GraphQL"
+            get() = "${type.qualifiedName!!.asString()}GraphQL$nc"
 
         override val get: String
-            get() = "instance.$fieldName.graphql"
+            get() = "instance.$fieldName$nc.graphql"
 
         override val set: String
-            get() = "instance.$fieldName = value.instance"
+            get() = "instance.$fieldName = value$nc.instance"
     }
 
     class IterableHandler(private val original: Handler, private val fieldName: String) : Handler {
+        override val nullable = false
+
         override val typeName: String
-            get() = "Iterable<${original.typeName}>"
+            get() = "Iterable<${original.typeName}${if (original.nullable) "?" else ""}>"
 
         override val get: String
-            get() = "instance.$fieldName.map { ${original.typeName}(it) }"
+            get() = if (original.nullable) {
+                "instance.$fieldName.map { if (it != null) ${original.typeName}(it) else null }"
+            } else {
+                "instance.$fieldName.map { ${original.typeName}(it) }"
+            }
 
         override val set: String
             get() = "instance.$fieldName = SizedCollection(value.map { it.instance })"
@@ -69,6 +81,7 @@ class GraphQLProcessor(private val gen: CodeGenerator) : SymbolProcessor {
     // Recursive function to create the correct handler
     @OptIn(KspExperimental::class)
     private fun handlerFor(prop: KSType, name: String) : Handler {
+        val nullable = prop.nullability == Nullability.NULLABLE
         val decl = prop.declaration as KSClassDeclaration
 
         return if (decl.packageName.asString() == "org.jetbrains.exposed.sql" && decl.simpleName.asString() == "SizedIterable") {
@@ -76,9 +89,9 @@ class GraphQLProcessor(private val gen: CodeGenerator) : SymbolProcessor {
             return IterableHandler(handlerFor(origType, name), name)
         } else {
             if (decl.isAnnotationPresent(GraphQLModel::class)) {
-                ModelHandler(decl, name)
+                ModelHandler(decl, nullable, name)
             } else {
-                DefaultHandler(decl, name)
+                DefaultHandler(decl, nullable, name)
             }
         }
     }

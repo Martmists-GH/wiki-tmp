@@ -31,11 +31,25 @@ kotlin {
         }
 
         val backendMain by getting {
+            kotlin.srcDir(buildDir.resolve("generated/ksp/backend/backendMain/kotlin"))
+
             dependencies {
                 // KTor
                 for (module in listOf(
-                    "core",
-                    "tomcat"
+                    // Core
+                    "core", "tomcat",
+
+                    // Authentication
+                    "auth", "sessions",
+
+                    // Plugins: Headers
+                    "auto-head-response", "default-headers", "compression",
+
+                    // Plugins: Content
+                    "status-pages",
+
+                    // Plugins: Monitoring
+                    "call-logging",
                 )) {
                     implementation("io.ktor:ktor-server-$module-jvm:${Versions.ktor}")
                 }
@@ -131,10 +145,6 @@ tasks {
         }
 
         into("compiler/src/main/kotlin/") {
-            sourceSets.onEach {
-                println("SourceSet: ${it.name}")
-            }
-
             from(kotlin.sourceSets.getByName("frontendMain").kotlin.sourceDirectories) {
                 exclude("index.kt")
             }

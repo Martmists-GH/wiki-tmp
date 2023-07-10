@@ -1,9 +1,9 @@
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import com.martmists.wiki.frontend.fontawesome.FaIcon
-import com.martmists.wiki.frontend.halfmoon.components.*
-import com.martmists.wiki.frontend.halfmoon.enums.HmBreakpoint
-import com.martmists.wiki.frontend.halfmoon.enums.HmContainerSize
+import com.martmists.wiki.frontend.halfmoon.component.*
+import com.martmists.wiki.frontend.halfmoon.enum.HmBreakpoint
+import com.martmists.wiki.frontend.halfmoon.enum.HmContainerSize
 import com.martmists.wiki.frontend.halfmoon.halfmoon
 import com.martmists.wiki.frontend.halfmoon.halfmoonOnDOMContentLoaded
 import kotlinx.browser.document

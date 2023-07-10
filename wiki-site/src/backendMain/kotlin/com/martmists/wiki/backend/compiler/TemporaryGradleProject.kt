@@ -1,30 +1,55 @@
 package com.martmists.wiki.backend.compiler
 
+import korlibs.io.async.delay
+import korlibs.time.TimeSpan
+import java.net.URI
+import java.net.URL
+import java.nio.file.*
 import kotlin.io.path.createTempDirectory
+import kotlin.io.path.name
 import kotlin.io.path.readText
+import kotlin.io.path.toPath
 
 class TemporaryGradleProject : AutoCloseable {
-    val directory = createTempDirectory()
-    val buildFile = directory.resolve("build.gradle.kts").toFile()
-    val outputFile = directory.resolve("build/productionExecutable/index.js").toFile()
+    private val directory = createTempDirectory()
+    private val outputFile = directory.resolve("build/distributions/index.js").toFile()
 
     init {
-        this::class.java.getResourceAsStream("/compiler/build.gradle.kts")!!.use {
-            buildFile.outputStream().use { out ->
-                it.copyTo(out)
+        // Copy `resources/compiler` to directory recursively
+        val uri = this::class.java.getResource("/compiler/").toURI()
+        val dirPath = try {
+            Paths.get(uri)
+        } catch (e: FileSystemNotFoundException) {
+            // If this is thrown, then it means that we are running the JAR directly (example: not from an IDE)
+            val env = mutableMapOf<String, String>()
+            FileSystems.newFileSystem(uri, env).getPath("/compiler/")
+        }
+
+        fun copy(dir: Path, toDir: Path) {
+            Files.walk(dir).forEach { path ->
+                val targetPath = toDir.resolve(dir.relativize(path).toString())
+                if (Files.isDirectory(path)) {
+                    Files.createDirectories(targetPath)
+                } else {
+                    Files.copy(path, targetPath, StandardCopyOption.REPLACE_EXISTING)
+                }
             }
         }
+
+        copy(dirPath, directory)
     }
 
     fun addFile(name: String, content: String) {
-        directory.resolve(name).toFile().writeText(content)
+        val target = directory.resolve(name).toFile()
+        target.parentFile.mkdirs()
+        target.writeText(content)
     }
 
     fun addSourceFile(name: String, content: String) {
-        addFile("src/main/kotlin/$name", content)
+        addFile("src/frontendMain/kotlin/$name", content)
     }
 
-    fun compile(): String {
+    suspend fun compile(): String {
         val process = ProcessBuilder("gradle", "build")
             .directory(directory.toFile())
             .redirectOutput(ProcessBuilder.Redirect.PIPE)
@@ -34,7 +59,9 @@ class TemporaryGradleProject : AutoCloseable {
         val output = process.inputStream.bufferedReader().readText()
         val error = process.errorStream.bufferedReader().readText()
 
-        process.waitFor()
+        while (process.isAlive) {
+            delay(TimeSpan(10.0))
+        }
 
         if (process.exitValue() != 0) {
             throw Exception("Gradle failed to build:\n$output\n$error")
