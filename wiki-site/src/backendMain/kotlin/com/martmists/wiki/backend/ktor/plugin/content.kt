@@ -1,15 +1,20 @@
 package com.martmists.wiki.backend.ktor.plugin
 
 import com.apurebase.kgraphql.GraphQL
+import com.apurebase.kgraphql.GraphQLError
+import com.apurebase.kgraphql.schema.dsl.operations.QueryDSL
 import com.apurebase.kgraphql.schema.execution.Executor
 import com.martmists.wiki.backend.database.model.WikiCategory
 import com.martmists.wiki.backend.database.model.WikiPage
-import com.martmists.wiki.backend.database.models.graphql
+import com.martmists.wiki.backend.database.model.graphql
 import com.martmists.wiki.backend.database.table.WikiCategoryTable
 import com.martmists.wiki.backend.database.table.WikiPageTable
+import com.martmists.wiki.backend.ext.requireAuthentication
+import com.martmists.wiki.backend.ktor.authentication.principal.AdminPrincipal
 import com.martmists.wiki.backend.ktor.feature.ExposedGraphQLPatch
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.plugins.autohead.*
 import io.ktor.server.plugins.statuspages.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -27,9 +32,16 @@ fun Application.setupContent() {
 
     install(GraphQL) {
         playground = true
-        executor = Executor.DataLoaderPrepared
+
+        wrap {
+            authenticate("jwt", strategy = AuthenticationStrategy.Optional, build = it)
+        }
 
         schema {
+            context { call ->
+                call.principal<AdminPrincipal>()?.let(::inject)
+            }
+
             query("pages") {
                 resolver { ->
                     WikiPage.all().map(WikiPage::graphql)
@@ -56,6 +68,14 @@ fun Application.setupContent() {
                         }.first().graphql
                     }
                 }
+            }
+
+            query("admins") {
+                resolver { ->
+                    "Admins here"
+                }
+
+                requireAuthentication<AdminPrincipal>()
             }
         }
     }

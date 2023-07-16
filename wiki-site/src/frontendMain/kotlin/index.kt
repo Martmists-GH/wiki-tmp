@@ -6,11 +6,22 @@ import com.martmists.wiki.frontend.halfmoon.enum.HmBreakpoint
 import com.martmists.wiki.frontend.halfmoon.enum.HmContainerSize
 import com.martmists.wiki.frontend.halfmoon.halfmoon
 import com.martmists.wiki.frontend.halfmoon.halfmoonOnDOMContentLoaded
+import com.martmists.wiki.graphql.client.GraphQLClient
+import io.ktor.client.*
+import io.ktor.client.engine.js.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.browser.document
 import org.jetbrains.compose.web.dom.*
 import org.jetbrains.compose.web.renderComposableInBody
 
-fun main() {
+val client = GraphQLClient(HttpClient(Js) {
+    install(ContentNegotiation) {
+        json()
+    }
+}, "http://localhost:8080/graphql")
+
+suspend fun main() {
     document.body?.apply {
         classList.add(
             "dark-mode",
@@ -125,6 +136,32 @@ fun main() {
             }
         }
     }
+
+    val res = client.query {
+        pages {
+            id
+            title
+            category {
+                name
+            }
+        }
+    }
+
+    res.forEach {
+        println("Page: ${it.title} (${it.id}) in category ${it.category?.name}")
+    }
+
+    val res2 = client.query {
+        page("index") {
+            id
+            title
+            published
+            content
+        }
+    }
+
+    println("Page: ${res2.title} (${res2.id}) | Published: ${res2.published}")
+    println(res2.content)
 
     halfmoonOnDOMContentLoaded()
 }

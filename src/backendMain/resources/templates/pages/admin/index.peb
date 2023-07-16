@@ -1,7 +1,0 @@
-{% extends "components/page/admin" %}
-
-{% block admin_content %}
-    <div class="content">
-        <p>I have no clue what to put here, maybe metrics eventually?</p>
-    </div>
-{% endblock %}

@@ -1,15 +1,23 @@
 import com.github.gmazzo.gradle.plugins.generators.BuildConfigKotlinGenerator
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.google.common.css.JobDescription
+import graphql.GenerateGraphQLTask
 import org.gradle.kotlin.dsl.*
 import org.gradle.configurationcache.extensions.capitalized
+import org.jetbrains.kotlin.gradle.tasks.BaseKotlinCompile
+import io.miret.etienne.gradle.sass.CompileSass
+import org.gradlewebtools.minify.CssMinifyTask
 
 
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
     id("com.github.gmazzo.buildconfig")
     id("com.github.johnrengelman.shadow")
     id("com.google.devtools.ksp")
     id("org.jetbrains.compose")
+    id("org.gradlewebtools.minify")
+    id("io.miret.etienne.sass")
     application
 }
 
@@ -20,14 +28,25 @@ kotlin {
 
     js("frontend", IR) {
         browser {
-
+            commonWebpackConfig {
+                sourceMaps = project.production
+                outputFileName = "index.js"
+            }
         }
         binaries.executable()
     }
 
     sourceSets {
         val commonMain by getting {
+            kotlin.srcDir(buildDir.resolve("generated/graphql/commonMain"))
 
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.serialization}")
+
+                implementation("io.ktor:ktor-client-core:${Versions.ktor}")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
+            }
         }
 
         val backendMain by getting {
@@ -40,13 +59,13 @@ kotlin {
                     "core", "tomcat",
 
                     // Authentication
-                    "auth", "sessions",
+                    "auth", "auth-jwt",
 
                     // Plugins: Headers
                     "auto-head-response", "default-headers", "compression",
 
                     // Plugins: Content
-                    "status-pages",
+                    "status-pages", "content-negotiation",
 
                     // Plugins: Monitoring
                     "call-logging",
@@ -72,18 +91,18 @@ kotlin {
 
                 // Database drivers
                 if (!production) {
-                    implementation("com.h2database:h2:2.1.214")
+                    implementation("com.h2database:h2:${Versions.h2}")
                 }
-                implementation("org.postgresql:postgresql:42.5.4")
+                implementation("org.postgresql:postgresql:${Versions.postgres}")
 
                 // Compression
-                implementation("com.soywiz.korlibs.korio:korio-jvm:4.0.8")
+                implementation("com.soywiz.korlibs.korio:korio-jvm:${Versions.korio}")
 
                 // Password hashing
-                implementation("de.mkammerer:argon2-jvm:2.11")
+                implementation("de.mkammerer:argon2-jvm:${Versions.argon2}")
 
                 // Markdown
-                implementation("com.vladsch.flexmark:flexmark-all:0.64.0")
+                implementation("com.vladsch.flexmark:flexmark-all:${Versions.flexmark}")
 
                 // Logging
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
@@ -98,6 +117,9 @@ kotlin {
                 // Compose
                 implementation(compose.html.core)
                 implementation(compose.html.svg)
+
+                implementation("io.ktor:ktor-client-js:${Versions.ktor}")
+                implementation("io.ktor:ktor-client-content-negotiation:${Versions.ktor}")
             }
         }
     }
@@ -125,21 +147,68 @@ compose.experimental {
 }
 
 tasks {
+    val createGraphQLBindings by registering(GenerateGraphQLTask::class) {
+//        schemaUrl.set("https://localhost:8080/graphql")
+        schemaFallback.set(projectDir.resolve("src/commonMain/graphql/schema.graphqls"))
+        outputDir.set(buildDir.resolve("generated/graphql/commonMain/"))
+        packageName.set("com.martmists.wiki.graphql.client")
+    }
+
+    afterEvaluate {
+        val kspKotlinBackend by existing {
+            dependsOn(createGraphQLBindings)
+        }
+    }
+
     rootProject.tasks.named("prepareKotlinBuildScriptModel") {
         dependsOn(
             named("generateBuildConfig"),
-            named("kspKotlinBackend")
+            named("kspKotlinBackend"),
         )
     }
 
+    val minifyCss by registering(CssMinifyTask::class) {
+        srcDir = projectDir.resolve("src/frontendMain/css")
+        dstDir = buildDir.resolve("sass")
+
+        options {
+            createSourceMaps = !production
+            sourceMapLevel = JobDescription.SourceMapDetailLevel.ALL
+            allowUnrecognizedProperties = true
+        }
+
+        outputs.upToDateWhen { false }
+    }
+
+    val compileSass by existing(CompileSass::class) {
+        outputDir = buildDir.resolve("sass")
+        setSourceDir(projectDir.resolve("src/frontendMain/scss"))
+        loadPath(file("sass-lib"))
+        style = compressed
+        sourceMap = file
+        sourceMapUrls = relative
+
+        outputs.upToDateWhen { false }
+        dependsOn(minifyCss)
+    }
+
     val backendProcessResources by existing(Copy::class) {
-        val webpackTask = getByName("frontendBrowser${if (production) "Production" else "Development"}Webpack")
+        val webpackTask = getByName("frontendBrowser${if (project.production) "Production" else "Development"}Webpack")
+        webpackTask.outputs.upToDateWhen { false }
 
         into("static/js") {
             from(webpackTask) {
-                include("frontend.js")
+                include("index.js")
                 if (!production) {
-                    include("frontend.js.map")
+                    include("index.js.map")
+                }
+            }
+        }
+
+        into("static/css") {
+            from(compileSass) {
+                if (production) {
+                    exclude("*.map")
                 }
             }
         }
@@ -149,6 +218,10 @@ tasks {
                 exclude("index.kt")
             }
         }
+    }
+
+    withType<BaseKotlinCompile> {
+        dependsOn(createGraphQLBindings)
     }
 
     withType<ShadowJar> {

@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "1.8.20"
     `kotlin-dsl`
+    antlr
 }
 
 repositories {
@@ -24,5 +25,13 @@ dependencies {
     implementation("org.gradle-webtools.minify:gradle-minify-plugin:1.3.2")
     implementation("org.jetbrains.compose:compose-gradle-plugin:1.4.1")
 
+    antlr("org.antlr:antlr4:4.5")
+
     implementation("com.martmists.commons:commons-gradle:1.0.4")
+}
+
+tasks {
+    named("compileKotlin") {
+        dependsOn(named("generateGrammarSource"))
+    }
 }

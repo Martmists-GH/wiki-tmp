@@ -1,0 +1,73 @@
+type WikiPageGraphQL {
+  category: WikiCategoryGraphQL
+
+  content: String!
+
+  id: Int!
+
+  published: Boolean!
+
+  title: String!
+
+  titleUrl: String!
+}
+
+type WikiCategoryGraphQL {
+  id: Int!
+
+  name: String!
+
+  nameUrl: String!
+
+  pages: [WikiPageGraphQL!]!
+}
+
+
+"""
+The String scalar type represents textual data, represented as UTF-8 character sequences
+"""
+scalar String
+
+"""
+The Boolean scalar type represents true or false
+"""
+scalar Boolean
+
+"""
+The Float scalar type represents signed double-precision fractional values as specified by IEEE 754
+"""
+scalar Float
+
+"""
+The Short scalar type represents a signed 16-bit numeric non-fractional value
+"""
+scalar Short
+
+"""
+The Int scalar type represents a signed 32-bit numeric non-fractional value
+"""
+scalar Int
+
+"""
+The Long scalar type represents a signed 64-bit numeric non-fractional value
+"""
+scalar Long
+
+"""
+Query object
+"""
+type Query {
+  pages: [WikiPageGraphQL!]!
+
+  page(path: String!): WikiPageGraphQL!
+
+  admins: String!
+}
+
+directive @skip (if: Boolean!) on FIELD|FRAGMENT_SPREAD|INLINE_FRAGMENT
+
+directive @include (if: Boolean!) on FIELD|FRAGMENT_SPREAD|INLINE_FRAGMENT
+
+schema {
+  query: Query
+}

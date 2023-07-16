@@ -17,7 +17,6 @@ import org.w3c.dom.HTMLHeadingElement
 import org.w3c.dom.HTMLSpanElement
 
 @Composable
-@JsExport
 fun HmAlert(type: HmAlertType? = null, attrs: AttrBuilderContext<HmAlertElement>? = null, content: ComposeBody<HmAlertElement>) {
     Div(attrs = {
         classes("alert")
